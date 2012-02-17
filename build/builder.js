@@ -425,8 +425,8 @@ function writeTagIncludes (production) {
     message += "\n\n-- ".grey + styleInclude.yellow + " ----------- \n".grey + includeTags.css.join("\n").grey;
   }
   console.log(message);
-  fs.writeFileSync(scriptInclude, includeTags.js.join("\n"+tagIndent));
-  fs.writeFileSync(styleInclude, includeTags.css.join("\n"+tagIndent));
+  fs.writeFileSync(scriptInclude, includeTags.js.join("\n"+tagIndent) + "\n");
+  fs.writeFileSync(styleInclude, includeTags.css.join("\n"+tagIndent) + "\n");
 }
 
 function initIncludeTags () {
