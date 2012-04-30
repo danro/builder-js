@@ -1,6 +1,7 @@
 /*! =======================================================
  * builder.js config
  * ========================================================*/
+/*jshint node:true */
 module.exports = {
 
   // remote ssh host, eg. "example.com" (optional)
@@ -22,6 +23,12 @@ module.exports = {
       TEMPLATE_DIR: "templates/",
       TEMPLATE_EXT: ".html"
     },
+    // js scripts for dev-only insertion (optional)
+    JS_DEV: [
+      // live reload
+      "js/libs/yepnope.js",
+      "js/libs/livereload.js"
+    ],
     // js files minified by smoosh
     JAVASCRIPT: {
       "script": [
@@ -37,4 +44,4 @@ module.exports = {
       ]
     }
   }
-}
+};

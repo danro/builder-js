@@ -1,46 +1,47 @@
 /*! =======================================================
- * builder.js v1.5.0
+ * builder.js v1.5.3
  * Magical versioning, minifiying, remote-pushing build tool.
  * ========================================================
  * Written by Dan Rogers - https://github.com/danro
  * This code may be freely distributed under the MIT license.
  * http://danro.mit-license.org/
  * ========================================================*/
+/*jshint node:true */
 
 // modules
-var fs = require("fs")
-  , smoosh = require("smoosh")
-  , hogan = require("hogan.js")
-  , rimraf = require('rimraf')
-  , mkdirp = require('mkdirp')
-  , async = require('async')
-  , exec = require("child_process").exec
-  , spawn = require("child_process").spawn
-  , rl = require("readline")
-  , path = require("path")
-  , config = require("./config.js");
+var fs = require("fs"),
+  smoosh = require("smoosh"),
+  hogan = require("hogan.js"),
+  rimraf = require('rimraf'),
+  mkdirp = require('mkdirp'),
+  async = require('async'),
+  exec = require("child_process").exec,
+  spawn = require("child_process").spawn,
+  rl = require("readline"),
+  path = require("path"),
+  config = require("./config.js");
   
 // properties
-var pushing = process.argv[2] === "push"
-  , testing = process.argv[2] === "test"
-  , msgPrefix = "[builder] ".green
-  , basePath = "../"
-  , distDir = config.DIST_DIR || "dist"
-  , distPath = basePath + distDir
-  , distFiles = {}
-  , latestPath = "latest/"
-  , templatesName = null
-  , scriptInclude = basePath + "build-js.html"
-  , styleInclude = basePath + "build-css.html"
-  , includeTags = initIncludeTags()
-  , tagIndent = config.TAG_INDENT || "  "
-  , smooshConfig = {}
-  , typeMinJS = ".min.js"
-  , typeMinCSS = ".min.css"
-  , srcPrefix = config.ABSOLUTE_URLS ? "/" : ""
-  , versionStart = 3000
-  , versionFile = "version.json"
-  , versionData = {};
+var pushing = process.argv[2] === "push",
+  testing = process.argv[2] === "test",
+  msgPrefix = "[builder] ".green,
+  basePath = "../",
+  distDir = config.DIST_DIR || "dist",
+  distPath = basePath + distDir,
+  distFiles = {},
+  latestPath = "latest/",
+  templatesName = null,
+  scriptInclude = basePath + "build-js.html",
+  styleInclude = basePath + "build-css.html",
+  includeTags = initIncludeTags(),
+  tagIndent = config.TAG_INDENT || "  ",
+  smooshConfig = {},
+  typeMinJS = ".min.js",
+  typeMinCSS = ".min.css",
+  srcPrefix = config.ABSOLUTE_URLS ? "/" : "",
+  versionStart = 3000,
+  versionFile = "version.json",
+  versionData = {};
 
 // start builder
 showBanner();
@@ -95,7 +96,7 @@ function initVersions () {
     var value = config.FILES[key];
     if (typeof value.FILENAME !== "undefined") {
       addProp(value.FILENAME);
-    } else {
+    } else if (key === "JAVASCRIPT" || key === "CSS") {
       for (var filename in value) {
         addProp(filename);
       }
@@ -146,12 +147,12 @@ function buildTemplates (callback) {
   // expose templatesName for other methods
   templatesName = options.FILENAME;
   
-  var dir = options.TEMPLATE_DIR
-    , ext = options.TEMPLATE_EXT || "."
-    , jstNS = options.NAMESPACE || "JST"
-    , jstOut = jstNS + "=" + jstNS + "||{};\n"
-    , jstFile = latestPath + options.FILENAME + ".js"
-    , templates = extractFiles();
+  var dir = options.TEMPLATE_DIR,
+    ext = options.TEMPLATE_EXT || ".",
+    jstNS = options.NAMESPACE || "JST",
+    jstOut = jstNS + "=" + jstNS + "||{};\n",
+    jstFile = latestPath + options.FILENAME + ".js",
+    templates = extractFiles();
   jstOut += templates.join("\n");
   console.log(msgPrefix + "compiling js templates using " + "Hogan".yellow.bold);
   fs.writeFileSync(jstFile, jstOut);
@@ -206,7 +207,7 @@ function smooshFiles (callback) {
 
   function prefix (key, value) {
     // prefix paths for smoosh
-    if (typeof(value) == "string") {
+    if (typeof(value) === "string") {
       return basePath + value;
     }
     return value;
@@ -216,12 +217,12 @@ function smooshFiles (callback) {
 function compareFiles (callback) {
   console.log("\n" + msgPrefix + "copying new or changed files to: " + distPath.yellow);
   
-  var files
-    , message = ""
-    , openedLatest
-    , openedDist
-    , fileInfo
-    , filePath;
+  var files,
+    message = "",
+    openedLatest,
+    openedDist,
+    fileInfo,
+    filePath;
 
   // loop thru each file in latest directory
   files = fs.readdirSync(latestPath);
@@ -292,12 +293,12 @@ function compareFiles (callback) {
 
 function pushToRemote (callback) {
   // rsync files to server
-  var child = null
-    , useSSH = config.SSH_HOST && config.SSH_HOST !== ""
-    , remoteHost = useSSH ? config.SSH_HOST + ":" : ""
-    , remotePath = config.PUSH_PATH || ""
-    , q = msgPrefix + "is about to push files to " + "[".yellow + remoteHost.cyan + remotePath.yellow + "]".yellow + " proceed?\n[enter = continue, no = abort]"
-    , homeRegex = /^~\//;
+  var child = null,
+    useSSH = config.SSH_HOST && config.SSH_HOST !== "",
+    remoteHost = useSSH ? config.SSH_HOST + ":" : "",
+    remotePath = config.PUSH_PATH || "",
+    q = msgPrefix + "is about to push files to " + "[".yellow + remoteHost.cyan + remotePath.yellow + "]".yellow + " proceed?\n[enter = continue, no = abort]",
+    homeRegex = /^~\//;
   
   if (remotePath === "") {
     console.log("\n" + msgPrefix + "no remote path! we're done here.\n");
@@ -325,7 +326,7 @@ function pushToRemote (callback) {
     i.question(q, function(answer) {
       answer = answer.toLowerCase();
       // cancel rsync if the response is 'n' or 'no'
-      if (answer.indexOf("n") != -1) {
+      if (answer.indexOf("n") !== -1) {
         console.log("\n" + msgPrefix + "remote push aborted.\n".yellow);
         callback();
       } else {
@@ -372,10 +373,10 @@ function pushToRemote (callback) {
 
 function makeIncludesLive (callback) {
   initIncludeTags();
-  var key
-    , value
-    , configJS = config.FILES.JAVASCRIPT || {}
-    , configCSS = config.FILES.CSS || {}
+  var key,
+    value,
+    configJS = config.FILES.JAVASCRIPT || {},
+    configCSS = config.FILES.CSS || {};
   // prepend templates if they exist
   if (templatesName) {
     includeTags.js.push(scriptTag(srcPrefix + distDir + distFiles[templatesName]));
@@ -383,6 +384,7 @@ function makeIncludesLive (callback) {
   for (key in configJS) {
     includeTags.js.push(scriptTag(srcPrefix + distDir + distFiles[key]));
   }
+  
   for (key in configCSS) {
     includeTags.css.push(styleTag(srcPrefix + distDir + distFiles[key]));
   }
@@ -392,10 +394,17 @@ function makeIncludesLive (callback) {
 
 function makeIncludesDev (callback) {
   initIncludeTags();
-  var key
-    , value
-    , configJS = config.FILES.JAVASCRIPT || {}
-    , configCSS = config.FILES.CSS || {}
+  var key,
+    value,
+    configJS = config.FILES.JAVASCRIPT || {},
+    configCSS = config.FILES.CSS || {};
+  // insert dev-only scripts
+  if (Array.isArray(config.FILES.JS_DEV)) {
+    config.FILES.JS_DEV.forEach(function (file) {
+      // dev js scripts may be external, so prefix them
+      includeTags.js.push(scriptTag(prefixFileSrc(file)));
+    });
+  }
   // append all js & css to tags arrays
   for (key in configJS) {
     value = configJS[key];
@@ -420,10 +429,10 @@ function makeIncludesDev (callback) {
 function writeTagIncludes (production) {
   var state = production ? "[production]".magenta : "[development]".green;
   var message = msgPrefix + "writing includes for: " + state;
-  if (!production) {
-    message += "\n-- ".grey + scriptInclude.yellow + " ----------- \n".grey + includeTags.js.join("\n").grey;
-    message += "\n\n-- ".grey + styleInclude.yellow + " ----------- \n".grey + includeTags.css.join("\n").grey;
-  }
+  // if (!production) {
+  //   message += "\n-- ".grey + scriptInclude.yellow + " ----------- \n".grey + includeTags.js.join("\n").grey;
+  //   message += "\n\n-- ".grey + styleInclude.yellow + " ----------- \n".grey + includeTags.css.join("\n").grey;
+  // }
   console.log(message);
   fs.writeFileSync(scriptInclude, includeTags.js.join("\n"+tagIndent) + "\n");
   fs.writeFileSync(styleInclude, includeTags.css.join("\n"+tagIndent) + "\n");
@@ -439,6 +448,10 @@ function scriptTag (fileName) {
 
 function styleTag (fileName) {
   return '<link rel="stylesheet" href="' + fileName + '">';
+}
+
+function prefixFileSrc (file) {
+  return file.indexOf("http://") !== -1 ? file : srcPrefix + file;
 }
 
 function saveVersionFile () {
